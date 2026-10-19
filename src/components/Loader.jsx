@@ -5,6 +5,7 @@ import BrandImg from './BrandImg';
 
 const DOTS = 12;
 const SEEN = 'rn:loaded';
+const MAX_WAIT_MS = 20000; // never hold the page hostage: after 20 s the lights come on regardless
 
 /**
  * "Lights on" loader. 12 floodlight dots switch on with REAL progress:
@@ -31,11 +32,17 @@ export default function Loader() {
       return;
     }
     let fontsDone = false;
+    const started = performance.now();
     document.fonts?.ready.then(() => (fontsDone = true));
     const tick = () => {
       const s = useUI.getState();
       const assets = s.renderMode === 'live' ? s.loadProgress ?? 0 : s.stillsProgress ?? 0;
-      const total = (fontsDone ? 0.1 : 0) + (s.chunkLoaded || s.renderMode !== 'live' ? 0.1 : 0) + assets * 0.7 + (s.sceneReady ? 0.1 : 0);
+      // live: the last 10 % is the compiled scene; stills: there is no scene, the first still being in is "ready"
+      const ready = s.renderMode === 'live' ? s.sceneReady : (s.stillsProgress ?? 0) >= 1;
+      const timedOut = performance.now() - started > MAX_WAIT_MS;
+      const total = timedOut
+        ? 1
+        : (fontsDone ? 0.1 : 0) + (s.chunkLoaded || s.renderMode !== 'live' ? 0.1 : 0) + assets * 0.7 + (ready ? 0.1 : 0);
       const target = Math.min(DOTS, Math.floor(total * DOTS + 1e-6));
       while (lit.current < target) {
         const el = dots.current[lit.current];

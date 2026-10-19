@@ -8,7 +8,9 @@ const PORT = 5179;
 const ROOT = new URL('..', import.meta.url).pathname;
 const EXE = process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-const STILLS = [
+// ONLY=hero,charge npm run capture → re-render just those stills
+const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
+const STILLS_ALL = [
   { id: 'hero', section: 'lights-on', p: 0 },
   { id: 'walk-side', section: 'walkaround', p: 0.12 },
   { id: 'walk-rear', section: 'walkaround', p: 0.47 },
@@ -25,6 +27,7 @@ const STILLS = [
   { id: 'teaser', section: 'configure', p: 0.5 },
   ...['white', 'black', 'silver', 'red', 'blue', 'quicksilver'].map((paint) => ({ id: `configure-${paint}`, mode: 'configure', paint, wait: 3200 })),
 ];
+const STILLS = ONLY ? STILLS_ALL.filter((s) => ONLY.includes(s.id)) : STILLS_ALL;
 
 const ENV = [
   { file: 'env/arena-night.jpg', shot: { position: [0, 1.7, -14], target: [0, 6, 30], fov: 52 }, patch: { ledDraw: 1 } },
@@ -63,6 +66,10 @@ try {
       const override = s.mode ? { mode: s.mode, paint: s.paint, wait: s.wait } : { section: s.section, p: s.p };
       const data = await page.evaluate((o) => window.__capture(o, 'image/webp', 0.84), override);
       save(`shots/${s.id}${view.suffix}.webp`, data);
+    }
+    if (ONLY && !ONLY.includes('specs')) {
+      await page.close();
+      continue;
     }
     // back to white, then the specs line drawing
     await page.evaluate(() => window.__capture({ mode: 'configure', paint: 'white', wait: 1500 }));

@@ -60,7 +60,7 @@ export default function CameraRig() {
 
     // screen-space framing: shift the car away from the text side (x on landscape, y on portrait)
     const sx = aspect >= 1 ? out.shiftX : 0;
-    const sy = aspect < 1 ? out.shiftY : out.shiftY * 0.35;
+    const sy = aspect < 1 ? out.shiftY : out.shiftY * 0.35 + out.liftL;
     if (Math.abs(sx) > 1e-4 || Math.abs(sy) > 1e-4) {
       camera.setViewOffset(size.width, size.height, sx * size.width, sy * size.height, size.width, size.height);
     } else if (camera.view && camera.view.enabled) {

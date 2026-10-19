@@ -3,7 +3,7 @@
 
 export const KEYS = [
   // camera
-  'camX', 'camY', 'camZ', 'tgtX', 'tgtY', 'tgtZ', 'fov', 'shake', 'shiftX', 'shiftY', 'orbit', 'parallax',
+  'camX', 'camY', 'camZ', 'tgtX', 'tgtY', 'tgtZ', 'fov', 'shake', 'shiftX', 'shiftY', 'liftL', 'orbit', 'parallax',
   // car (contact-point position + Euler rotation)
   'carX', 'carY', 'carZ', 'carRX', 'carRY', 'carRZ', 'carVis',
   // lights
@@ -20,7 +20,7 @@ export const KEYS = [
 ];
 
 export const DEFAULTS = {
-  camX: 4.3, camY: 0.8, camZ: 5.4, tgtX: 0, tgtY: 0.5, tgtZ: 0.2, fov: 32, shake: 0, shiftX: 0, shiftY: 0, orbit: 0, parallax: 1,
+  camX: 4.3, camY: 0.8, camZ: 5.4, tgtX: 0, tgtY: 0.5, tgtZ: 0.2, fov: 32, shake: 0, shiftX: 0, shiftY: 0, liftL: 0, orbit: 0, parallax: 1,
   carX: 0, carY: 0, carZ: 0, carRX: 0, carRY: 0, carRZ: 0, carVis: 1,
   f0: 1, f1: 1, f2: 1, env: 1, bar: 1, front: 1, glow: 0,
   spot: 0, spX: 0, spY: 11, spZ: 0.5, stX: 0, stY: 0, stZ: 0,

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ScrollTrigger } from './lib/gsap';
 import { initLenis } from './lib/lenis';
@@ -17,6 +17,21 @@ const Configure = lazy(() => import('./pages/Configure'));
 const Specs = lazy(() => import('./pages/Specs'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+/** If WebGL or the scene fails for any reason, switch to the pre-rendered stills instead of a black page. */
+class SceneBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(err) {
+    console.warn('3D scene failed, using stills:', err);
+    useUI.getState().set({ renderMode: 'stills' });
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 /** The persistent WebGL canvas: its chunk is requested only after the first paint. */
 function LiveScene() {
   const [Scene, setScene] = useState(null);
@@ -27,6 +42,10 @@ function LiveScene() {
         if (!alive) return;
         useUI.getState().set({ chunkLoaded: true });
         setScene(() => m.default);
+      })
+      .catch((err) => {
+        console.warn('3D chunk failed to load, using stills:', err);
+        useUI.getState().set({ renderMode: 'stills' });
       });
     const id = requestAnimationFrame(() => setTimeout(load, 0));
     return () => {
@@ -34,7 +53,11 @@ function LiveScene() {
       cancelAnimationFrame(id);
     };
   }, []);
-  return Scene ? <Scene /> : null;
+  return Scene ? (
+    <SceneBoundary>
+      <Scene />
+    </SceneBoundary>
+  ) : null;
 }
 
 function RouteEffects() {

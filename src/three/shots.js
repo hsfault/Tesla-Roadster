@@ -115,8 +115,9 @@ export function heroShot(o, p) {
   // scroll: dolly in, then hand over to the walkaround
   const push = smooth(seg(p, 0.0, 1.0)) * glide;
   if (push > 0) orbitCam(o, capture(o), SHOTS.heroPush, push);
-  o.shiftX = -0.13 * glide;
-  o.shiftY = 0.14;
+  o.shiftX = -0.15 * glide;
+  o.shiftY = 0.2; // portrait: car in the upper half
+  o.liftL = 0.055; // landscape: extra lift so the car clears the headline block
   o.orbit = glide;
 }
 

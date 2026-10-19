@@ -95,8 +95,8 @@ export default function LightsOn() {
 
         <div ref={block} data-block className="absolute bottom-[96px] left-0 right-0 z-10 sm:bottom-[104px]">
           <div className="gutter">
-            <div className="scrim-bl max-w-[1100px]">
-              <Headline as="h1" ref={title} className="display text-hero" style={{ visibility: 'hidden' }}>
+            <div className="scrim-bl">
+              <Headline as="h1" ref={title} className="display whitespace-nowrap leading-[0.95]" style={{ visibility: 'hidden', fontSize: 'clamp(2.5rem, 10vw, 11.5rem)' }}>
                 Roadster
               </Headline>
               <p ref={stats} className="mono mt-6 whitespace-pre-wrap text-[13px] uppercase tracking-[0.12em] text-white sm:text-[15px]" style={{ visibility: 'hidden' }}>
@@ -121,7 +121,7 @@ export default function LightsOn() {
           </div>
         </div>
 
-        <div className="rm-hide absolute bottom-6 right-[var(--gutter)] z-10 flex flex-col items-center gap-3" aria-hidden="true">
+        <div className="rm-hide absolute bottom-6 right-[var(--gutter)] z-10 hidden flex-col items-center gap-3 md:flex" aria-hidden="true">
           <span className="label [writing-mode:vertical-rl]">Scroll</span>
           <span className="relative block h-16 w-[2px] bg-rig">
             <span ref={cue} className="led-line-v absolute inset-0 block" style={{ transform: 'scaleY(0)' }} />
