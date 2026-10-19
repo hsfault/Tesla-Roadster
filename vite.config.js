@@ -8,9 +8,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
+        // three / R3F stay in the lazily imported Scene chunk (no manual chunk: it would pull shared React
+        // deps such as `scheduler` into it and force a preload from the entry).
         manualChunks: {
-          three: ['three'],
-          r3f: ['@react-three/fiber', '@react-three/drei', '@react-three/postprocessing', 'postprocessing'],
           gsap: ['gsap', '@gsap/react', 'lenis'],
         },
       },
