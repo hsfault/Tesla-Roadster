@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { setSound } from '../lib/sound';
-import { detectRenderMode, prefersReducedMotion } from '../lib/device';
+import { detectRenderMode, prefersLite, prefersReducedMotion } from '../lib/device';
 
 const hasWindow = typeof window !== 'undefined';
 
@@ -13,7 +13,8 @@ export const useUI = create((set) => ({
   transitionCovered: false,
   loaderDone: false,
   sceneReady: false,
-  perfLow: false,
+  perfLow: false, // set by PerformanceMonitor when FPS drops: also drops bloom
+  lite: hasWindow ? prefersLite() : false,
   sceneMode: 'home', // 'home' | 'configure' | 'specs' | 'none'
   activeSection: 'lights-on',
   menuOpen: false,

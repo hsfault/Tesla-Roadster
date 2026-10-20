@@ -7,7 +7,7 @@ import { useUI } from '../store/ui';
 
 /** The arena floor: dark asphalt with low-res wet reflections on capable desktops, plain material otherwise. */
 export default function Arena() {
-  const perfLow = useUI((s) => s.perfLow);
+  const perfLow = useUI((s) => s.perfLow || s.lite);
   const ground = useRef();
   const asphalt = useTexture('/textures/asphalt-dark.jpg');
 
@@ -30,13 +30,13 @@ export default function Arena() {
       ) : (
         <MeshReflectorMaterial
           map={asphalt}
-          color="#8a8c92"
+          color="#2c2d31"
           resolution={512}
-          blur={[300, 100]}
-          mixBlur={1}
-          mixStrength={0.8}
+          blur={[200, 70]}
+          mixBlur={0.55}
+          mixStrength={1.3}
           envMapIntensity={0.25}
-          mixContrast={1}
+          mixContrast={1.15}
           roughness={1}
           metalness={0}
           depthScale={1.1}

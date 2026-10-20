@@ -7,6 +7,7 @@ import { VARIANTS } from '../data/variants';
 import { stillSrc } from '../components/StillsStage';
 import Headline from '../components/Headline';
 import Footer from '../components/Footer';
+import { useMedia } from '../hooks';
 
 function RollCell({ value }) {
   const el = useRef();
@@ -36,6 +37,7 @@ export default function Specs() {
   const underline = useRef();
   const [vi, setVi] = useState(1);
   const renderMode = useUI((s) => s.renderMode);
+  const desktop = useMedia('(min-width: 768px)');
   const v = VARIANTS[vi];
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function Specs() {
             </Headline>
             <p className="mt-5 max-w-[52ch] text-[17px] text-mist">{STATUS.headline}</p>
 
-            {renderMode === 'stills' && (
+            {(renderMode === 'stills' || !desktop) && (
               <div className="relative mt-8 aspect-[16/10] w-full overflow-hidden border border-rig bg-night">
                 <img src={stillSrc('specs').replace('-m.webp', '.webp')} alt="Technical line drawing of the Roadster with length, wheelbase and height marked" className="absolute inset-0 h-full w-full object-contain" loading="lazy" />
               </div>

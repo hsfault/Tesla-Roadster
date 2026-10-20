@@ -2,8 +2,8 @@ import { Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, OrbitControls, PerformanceMonitor, useProgress, useTexture } from '@react-three/drei';
-import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing';
-import { Effect, ToneMappingMode } from 'postprocessing';
+import { EffectComposer, Bloom, ToneMapping, Noise, Vignette } from '@react-three/postprocessing';
+import { BlendFunction, Effect, ToneMappingMode } from 'postprocessing';
 import { gsap } from '../lib/gsap';
 import { useUI } from '../store/ui';
 import { compute, fx, out, setModeShots } from './director';
@@ -37,18 +37,25 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   }
 }
 
+const BASE_EXPOSURE = 1.0;
+
 function Effects() {
   const perfLow = useUI((s) => s.perfLow);
+  const lite = useUI((s) => s.lite);
   const exposure = useMemo(() => new ExposureEffect(), []);
   useFrame(() => {
     const bump = (fx.flare[0] + fx.flare[1] + fx.flare[2]) * 0.15;
-    exposure.uniforms.get('exposure').value = Math.min(1.15, 1 + bump) * (1 - fx.blackout);
+    exposure.uniforms.get('exposure').value = BASE_EXPOSURE * Math.min(1.15, 1 + bump) * (1 - fx.blackout);
   });
   return (
-    <EffectComposer multisampling={perfLow ? 0 : 4} enableNormalPass={false}>
-      {!perfLow && <Bloom mipmapBlur intensity={0.62} luminanceThreshold={1.0} luminanceSmoothing={0.25} resolutionScale={0.5} />}
+    <EffectComposer multisampling={perfLow || lite ? 0 : 4} enableNormalPass={false}>
+      {!perfLow && <Bloom mipmapBlur intensity={0.42} luminanceThreshold={1.15} luminanceSmoothing={0.3} resolutionScale={0.5} />}
       <primitive object={exposure} />
+      {/* ACES keeps true blacks for the night arena (AgX lifted the floor to studio grey) */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      {/* a whisper of grain + lens falloff: what makes it read as a camera, not a render */}
+      <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.1} />
+      <Vignette offset={0.32} darkness={0.62} />
     </EffectComposer>
   );
 }
@@ -59,9 +66,26 @@ function Lighting() {
   const pool = useRef();
   const poolTarget = useMemo(() => new THREE.Object3D(), []);
   const hemi = useRef();
+  const key = useRef();
+  const rim = useRef();
   useFrame(() => {
-    scene.environmentIntensity = out.env * 0.85;
-    if (hemi.current) hemi.current.intensity = 0.06 * out.env;
+    scene.environmentIntensity = out.env * 0.6;
+    if (hemi.current) hemi.current.intensity = 0.04 * out.env;
+    // key from above-front gives the white paint a real light→shadow gradient; rim separates it from the night
+    // key / rim follow the car so the floor only gets a soft pool around it (a stage, not a studio)
+    for (const l of [key.current, rim.current]) {
+      if (!l) continue;
+      l.target.position.set(out.carX, out.carY + 0.5, out.carZ);
+      l.target.updateMatrixWorld();
+    }
+    if (key.current) {
+      key.current.intensity = 5.5 * out.env;
+      key.current.position.set(out.carX + 5, out.carY + 11, out.carZ + 7);
+    }
+    if (rim.current) {
+      rim.current.intensity = 4 * out.env;
+      rim.current.position.set(out.carX - 4, out.carY + 3.5, out.carZ - 9);
+    }
     const p = pool.current;
     if (p) {
       p.intensity = out.spot * 5.5;
@@ -72,19 +96,28 @@ function Lighting() {
   });
   return (
     <>
-      <hemisphereLight ref={hemi} args={['#d8dde6', '#050507', 0.06]} />
+      <hemisphereLight ref={hemi} args={['#d8dde6', '#050507', 0.04]} />
+      <spotLight ref={key} angle={0.2} penumbra={1} decay={0} intensity={0} color="#f4f6ff" />
+      <spotLight ref={rim} angle={0.26} penumbra={1} decay={0} intensity={0} color="#dfe6ff" />
       <primitive object={poolTarget} />
       <spotLight ref={pool} target={poolTarget} angle={0.3} penumbra={0.65} decay={0} intensity={0} color="#ffffff" />
-      <Environment resolution={256} frames={1} background={false}>
+      <Environment resolution={512} frames={1} background={false}>
         <group rotation={[0, 0, 0]}>
-          {[-3, 0, 3].map((z) => (
-            <Lightformer key={z} form="rect" intensity={2.6} position={[0, 7, z]} rotation-x={Math.PI / 2} scale={[11, 0.7, 1]} />
+          {/* two long, thin overhead light bars: crisp highlights running along the body */}
+          {[-1.2, 1.2].map((x) => (
+            <Lightformer key={x} form="rect" intensity={5} position={[x, 8, 0]} rotation-x={Math.PI / 2} scale={[0.7, 16, 1]} />
           ))}
-          <Lightformer form="rect" intensity={1.4} position={[-7, 1.6, 0]} rotation-y={Math.PI / 2} scale={[14, 0.45, 1]} />
-          <Lightformer form="rect" intensity={1.4} position={[7, 1.6, 0]} rotation-y={-Math.PI / 2} scale={[14, 0.45, 1]} />
-          <Lightformer form="rect" intensity={0.9} position={[0, 2.2, 9]} rotation-y={Math.PI} scale={[16, 0.35, 1]} />
-          <Lightformer form="rect" color="#ff2a2a" intensity={1.1} position={[0, 0.25, -9]} scale={[22, 0.18, 1]} />
-          <Lightformer form="circle" intensity={3} position={[0, 12, 22]} scale={4} />
+          {/* far floodlight banks: small, hot panels → pin-sharp specular points on the clearcoat */}
+          {[[-22, 30], [0, 44], [22, 30], [-26, -24], [26, -24]].map(([x, z]) => (
+            <Lightformer key={`${x}${z}`} form="rect" intensity={22} position={[x * 0.35, 6.5, z * 0.35]} target={[0, 0.5, 0]} scale={[1.6, 0.9, 1]} />
+          ))}
+          {/* soft, dim side fills so the flanks are not dead black */}
+          <Lightformer form="rect" intensity={0.22} position={[-9, 2.5, 0]} rotation-y={Math.PI / 2} scale={[18, 2.2, 1]} />
+          <Lightformer form="rect" intensity={0.22} position={[9, 2.5, 0]} rotation-y={-Math.PI / 2} scale={[18, 2.2, 1]} />
+          {/* low horizon band + a red LED line: what a car on a lit floor actually reflects at its waist */}
+          <Lightformer form="rect" intensity={0.35} position={[0, 0.6, -12]} scale={[40, 0.5, 1]} />
+          <Lightformer form="rect" intensity={0.35} position={[0, 0.6, 12]} rotation-y={Math.PI} scale={[40, 0.5, 1]} />
+          <Lightformer form="rect" color="#ff2a2a" intensity={2.2} position={[0, 0.08, -10]} scale={[30, 0.06, 1]} />
         </group>
       </Environment>
     </>
@@ -273,7 +306,7 @@ function useReportProgress() {
 export default function Scene() {
   useReportProgress();
   const mode = useUI((s) => s.sceneMode);
-  const perfLow = useUI((s) => s.perfLow);
+  const perfLow = useUI((s) => s.perfLow || s.lite);
   const covered = useUI((s) => s.footerVisible || s.transitionCovered);
   const carRef = useRef();
   const interactive = mode === 'configure';

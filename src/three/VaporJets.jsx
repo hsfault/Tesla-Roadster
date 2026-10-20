@@ -132,7 +132,7 @@ void main() {
 }`;
 
 const EMITTERS = {
-  rear: { pts: REAR_NOZZLES, dir: [0, 0.05, -1], speed: 7, spread: 0.6, rate: 90, life: [0.7, 1.2], size: [0.35, 2.4] },
+  rear: { pts: REAR_NOZZLES, dir: [0, 0.05, -1], speed: 8, spread: 0.45, rate: 70, life: [0.5, 0.9], size: [0.25, 1.4] },
   down: { pts: DOWN_NOZZLES, dir: [0, -1, 0], speed: 5, spread: 0.9, rate: 130, life: [0.8, 1.4], size: [0.4, 2.8] },
   fan: { pts: [[0.42, 0.3, -2.2], [-0.42, 0.3, -2.2]], dir: [0, 0.15, -1], speed: 2.2, spread: 0.5, rate: 26, life: [0.8, 1.4], size: [0.25, 1.3] },
 };

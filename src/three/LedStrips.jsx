@@ -27,8 +27,8 @@ varying float vAcross;
 varying float vDist;
 void main() {
   float a = abs(vAcross);
-  float core = 1.0 - smoothstep(0.018, 0.045, a);
-  float halo = exp(-a * 13.0) * 0.4;
+  float core = 1.0 - smoothstep(0.008, 0.022, a);
+  float halo = exp(-a * 26.0) * 0.22;
   float reach = uDraw * uReach;
   float draw = 1.0 - smoothstep(reach - 1.5, reach, abs(vAlong));
   float period = mix(5.0, 16.0, uStretch);
@@ -36,7 +36,7 @@ void main() {
   float ph = fract((vAlong + uFlow) / period);
   float dash = mix(1.0, smoothstep(0.0, 0.04, ph) * (1.0 - smoothstep(duty - 0.06, duty, ph)), uDash);
   float fog = 1.0 - smoothstep(22.0, 88.0, vDist);
-  float I = uLevel * (2.6 + uFlash * 5.0);
+  float I = uLevel * (2.2 + uFlash * 5.0);
   gl_FragColor = vec4(uColor * I * (core + halo) * draw * dash * fog, 1.0);
 }`;
 

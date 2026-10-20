@@ -50,6 +50,10 @@ uniform float uPaintMetal, uPaintRough, uRimMetal, uRimRough, uBar, uFront;
 float wheelDist(vec2 p, vec2 c) { return length(p - c); }`
       )
       .replace(
+        '#include <map_pars_fragment>',
+        '#include <map_pars_fragment>\nfloat lumAt(vec2 uv) { return dot(texture2D(map, uv).rgb, vec3(0.2126, 0.7152, 0.0722)); }'
+      )
+      .replace(
         '#include <map_fragment>',
         `vec3 tx = texture2D(map, vMapUv).rgb;
 float lum = dot(tx, vec3(0.2126, 0.7152, 0.0722));
@@ -57,7 +61,10 @@ float mxc = max(tx.r, max(tx.g, tx.b));
 float mnc = min(tx.r, min(tx.g, tx.b));
 float sat = (mxc - mnc) / max(mxc, 1e-4);
 float redM = smoothstep(0.45, 0.7, sat) * step(tx.g * 1.8, tx.r) * smoothstep(0.03, 0.1, tx.r);
-float paintM = smoothstep(0.26, 0.5, lum) * (1.0 - redM);
+// dilate the paint mask by ~3 texels so thin drawn outlines in the baked atlas don't read as black edges
+const float D = 3.0 / 2048.0;
+float lumN = max(max(lumAt(vMapUv + vec2(D, D)), lumAt(vMapUv + vec2(-D, -D))), max(lumAt(vMapUv + vec2(D, -D)), lumAt(vMapUv + vec2(-D, D))));
+float paintM = smoothstep(0.26, 0.5, max(lum, lumN * step(0.12, lumN) * 0.98)) * (1.0 - redM);
 // wheels: geometric cylinders on the car's sides, only where the atlas is not body paint
 float dF = wheelDist(vCarPos.xy, vec2(${GEO.frontAxleX.toFixed(2)}, ${GEO.wheelCY.toFixed(2)}));
 float dR = wheelDist(vCarPos.xy, vec2(${GEO.rearAxleX.toFixed(2)}, ${GEO.wheelCY.toFixed(2)}));
@@ -74,7 +81,7 @@ float calM = wheelM * smoothstep(1.9, 2.2, dW) * (1.0 - smoothstep(3.2, 3.5, dW)
   * smoothstep(0.25, 0.4, ang) * (1.0 - smoothstep(1.25, 1.4, ang)) * (1.0 - smoothstep(0.002, 0.012, lum));
 float glassM = (1.0 - paintM) * (1.0 - wheelM) * (1.0 - redM) * smoothstep(${(GEO.beltY - 0.6).toFixed(2)}, ${GEO.beltY.toFixed(2)}, vCarPos.y);
 float frontM = step(vCarPos.x, ${GEO.noseX.toFixed(2)}) * smoothstep(5.15, 5.3, vCarPos.y) * (1.0 - smoothstep(5.65, 5.8, vCarPos.y));
-float shade = mix(0.72, 1.0, smoothstep(0.3, 0.75, lum));
+float shade = 1.0; // clean paint: shading comes from the lights, not the baked texture (whose noise read as drawn-on)
 vec3 col = uDark * (0.85 + 1.5 * lum);
 col = mix(col, vec3(0.012), glassM);
 col = mix(col, uPaint * shade, paintM);

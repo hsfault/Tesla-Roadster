@@ -27,11 +27,20 @@ function hasWebGL2() {
   }
 }
 
-/** Decided once per session load: 'live' (WebGL scene) or 'stills' (pre-rendered WebP shots). */
+/**
+ * Decided once per load. Live 3D is the default everywhere; the pre-rendered stills are only for
+ * reduced motion and browsers without WebGL2 (and as the automatic fallback if the scene fails).
+ */
 export function detectRenderMode() {
   if (isCapture) return 'live';
   const forced = new URLSearchParams(window.location.search).get('render');
   if (forced === 'live' || forced === 'stills') return forced;
-  if (prefersReducedMotion() || isSmallScreen() || isLowPower() || !hasWebGL2()) return 'stills';
+  if (prefersReducedMotion() || !hasWebGL2()) return 'stills';
   return 'live';
+}
+
+/** Phones and lower-power machines get a lighter live scene: dpr 1, no MSAA, plain floor (bloom stays). */
+export function prefersLite() {
+  if (isCapture) return false;
+  return isSmallScreen() || isLowPower();
 }
